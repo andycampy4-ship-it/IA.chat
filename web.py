@@ -14,8 +14,6 @@ personalidad = st.selectbox(
     "Elige la personalidad de tu IA:",
     ["chistosa", "matematicas", "coach"]
 )
-
-# Cargar el prompt correspondiente
 sistema = cargar_personalidad(personalidad)
 
 # ----------------------------
@@ -53,4 +51,5 @@ with st.sidebar:
     st.markdown("- Haz preguntas claras y cortas.")
     st.markdown("- La IA recuerda lo que escribes entre sesiones.")
     st.markdown("- Cambia la personalidad usando el menú desplegable.")
+
     st.markdown("- La conversación larga se resume automáticamente para mantener la IA rápida.")
