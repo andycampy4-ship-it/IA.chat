@@ -15,16 +15,15 @@ MAX_MENSAJES = 30  # número máximo de mensajes antes de resumir
 # ----------------------------
 def cargar_personalidad(nombre):
     """
-    Carga el prompt base desde un archivo en la carpeta prompts.
-    nombre: 'chistosa', 'matematicas', 'coach', etc.
+    Carga el archivo de personalidad que está en la raíz del repo
+    nombre: 'chistosa', 'matematicas', 'coach'
     """
-    ruta = os.path.join("prompts", f"{nombre}.py")
+    ruta = f"{nombre}.py"  # sin carpeta
     with open(ruta, "r", encoding="utf-8") as f:
         codigo = f.read()
     contexto = {}
     exec(codigo, contexto)  # ejecuta el código para obtener la variable 'sistema'
     return contexto["sistema"]
-
 # ----------------------------
 # Función para resumir historial
 # ----------------------------
@@ -87,4 +86,5 @@ if __name__ == "__main__":
     sistema = cargar_personalidad(personalidad)
     while True:
         pregunta = input("Tu: ")
+
         print("IA:", preguntar(pregunta, sistema))
