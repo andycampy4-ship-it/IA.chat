@@ -1,36 +1,39 @@
 # main.py
 import requests
 import os
-from memoria import cargar_historial, guardar_historial
-
-# Historial persistente
-historial = cargar_historial()
-url = "http://localhost:11434/api/generate"  # URL de tu modelo Phi
-
-# Configuración para resúmenes automáticos
-MAX_MENSAJES = 30  # número máximo de mensajes antes de resumir
 
 # ----------------------------
-# Función para cargar personalidad
+# Configuración modelo remoto
+# ----------------------------
+HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
+MODELO_URL = "https://api-inference.huggingface.co/models/gpt2"  # modelo gratuito de ejemplo
+MAX_MENSAJES = 30  # número máximo de mensajes antes de resumir
+
+# Historial global (en la nube usar session_state)
+historial = []
+
+# ----------------------------
+# Cargar personalidad
 # ----------------------------
 def cargar_personalidad(nombre):
     """
     Carga el archivo de personalidad que está en la raíz del repo
     nombre: 'chistosa', 'matematicas', 'coach'
     """
-    ruta = f"{nombre}.py"  # sin carpeta
+    ruta = f"{nombre}.py"
     with open(ruta, "r", encoding="utf-8") as f:
         codigo = f.read()
     contexto = {}
     exec(codigo, contexto)  # ejecuta el código para obtener la variable 'sistema'
     return contexto["sistema"]
+
 # ----------------------------
-# Función para resumir historial
+# Resumen automático del historial
 # ----------------------------
-def resumir_historial(historial, modelo_url=url):
+def resumir_historial(historial):
     """
-    Usa Phi para resumir el historial cuando sea muy largo.
-    Devuelve un historial resumido como lista de un solo mensaje 'Sistema'.
+    Resume la conversación si se hace muy larga.
+    Devuelve un historial reducido como lista de un solo mensaje 'Sistema'.
     """
     conversacion = ""
     for item in historial:
@@ -44,8 +47,9 @@ Conversación:
 Resumen:
 """
 
-    r = requests.post(modelo_url, json={"model": "phi", "prompt": prompt_resumen, "stream": False})
-    resumen = r.json()["response"]
+    headers = {"Authorization": f"Bearer {HUGGINGFACE_API_KEY}"}
+    r = requests.post(MODELO_URL, headers=headers, json={"inputs": prompt_resumen})
+    resumen = r.json()[0]["generated_text"]
 
     return [{"rol": "Sistema", "mensaje": resumen}]
 
@@ -54,8 +58,8 @@ Resumen:
 # ----------------------------
 def preguntar(prompt, sistema):
     """
-    Envía el mensaje del usuario a Phi y devuelve la respuesta de la IA.
-    Incluye memoria persistente y resumen automático.
+    Envía el mensaje del usuario al modelo remoto y devuelve la respuesta de la IA.
+    Incluye memoria (historial) y resumen automático.
     """
     global historial
     historial.append({"rol": "Usuario", "mensaje": prompt})
@@ -64,18 +68,18 @@ def preguntar(prompt, sistema):
     if len(historial) > MAX_MENSAJES:
         historial = resumir_historial(historial)
 
-    # Construir prompt completo para la IA
+    # Construir prompt completo
     conversacion = sistema + "\n"
     for item in historial:
         conversacion += f'{item["rol"]}: {item["mensaje"]}\n'
     conversacion += "IA:"
 
-    # Llamar al modelo Phi
-    r = requests.post(url, json={"model": "phi", "prompt": conversacion, "stream": False})
-    respuesta = r.json()["response"]
+    # Llamar al modelo remoto
+    headers = {"Authorization": f"Bearer {HUGGINGFACE_API_KEY}"}
+    r = requests.post(MODELO_URL, headers=headers, json={"inputs": conversacion})
+    respuesta = r.json()[0]["generated_text"]
 
     historial.append({"rol": "IA", "mensaje": respuesta})
-    guardar_historial(historial)  # guardar en disco
     return respuesta
 
 # ----------------------------
@@ -85,6 +89,5 @@ if __name__ == "__main__":
     personalidad = input("Elige personalidad (chistosa/matematicas/coach): ")
     sistema = cargar_personalidad(personalidad)
     while True:
-        pregunta = input("Tu: ")
-
-        print("IA:", preguntar(pregunta, sistema))
+        pregunta_usuario = input("Tu: ")
+        print("IA:", preguntar(pregunta_usuario, sistema))
