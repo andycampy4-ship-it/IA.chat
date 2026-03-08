@@ -7,6 +7,8 @@ from main import preguntar, cargar_personalidad
 # ----------------------------
 st.set_page_config(page_title="IA Local Phi", page_icon="🤖", layout="wide")
 
+st.title("🤖 Chat IA Online")
+
 # ----------------------------
 # Selector de personalidad
 # ----------------------------
@@ -17,7 +19,7 @@ personalidad = st.selectbox(
 sistema = cargar_personalidad(personalidad)
 
 # ----------------------------
-# Inicializar historial en la sesión
+# Inicializar historial en sesión
 # ----------------------------
 if "historial" not in st.session_state:
     st.session_state.historial = []
@@ -49,7 +51,6 @@ for quien, mensaje in st.session_state.historial:
 with st.sidebar:
     st.markdown("### Tips")
     st.markdown("- Haz preguntas claras y cortas.")
-    st.markdown("- La IA recuerda lo que escribes entre sesiones.")
     st.markdown("- Cambia la personalidad usando el menú desplegable.")
-
-    st.markdown("- La conversación larga se resume automáticamente para mantener la IA rápida.")
+    st.markdown("- La conversación larga se resume automáticamente.")
+    st.markdown("- La IA funciona online y gratis en Hugging Face Spaces.")
